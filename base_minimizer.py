@@ -1,6 +1,9 @@
 from typing import List
 
-from sympy import sympify, solve, diff, symbols
+import sympy
+from numpy.lib.type_check import imag
+from scipy.optimize import fsolve
+from sympy import sympify, solve, diff, symbols, solveset, real_roots
 
 from stopping_executor import StoppingExecutor
 from utils import get_gradients_of_function, substitute_values_in_variables, make_value_mapping
@@ -17,27 +20,33 @@ class BaseMinimizer:
 
     def _minimize_scalar_function(self, function):
         new_der = diff(function)
-        new_gamma_i = float(solve(new_der)[0])
+        second_der = diff(new_der)
+        try:
+            results = iter(real_roots(new_der, next(iter(function.free_symbols))))
+        except StopIteration:
+            raise ValueError('Haven`t found a real roots')
 
-        return new_gamma_i
+        results = [result.evalf() for result in results]
+        second_ders = [second_der.subs([(symbol, result) for index, symbol in enumerate(second_der.free_symbols)]) for result in results]
+        results = [results[index] for index, der in enumerate(second_ders) if der > 0]
+
+        function_values = [function.subs([(symbol, result) for index, symbol in enumerate(function.free_symbols)]) for result in results]
+        index_of_min = function_values.index(min(function_values))
+
+        return results[index_of_min]
 
     def get_first_element(self, x_current: List):
-        is_should_stop = False
+        x_current = make_value_mapping(x_current, self.free_symbols)
+        gamma_i = symbols('gamma')
 
-        while not is_should_stop:
-            x_current = make_value_mapping(x_current, self.free_symbols)
-            gamma_i = symbols('gamma')
+        functions = [x_current[x_i_sym] - gamma_i*self.gradients[index] for index, x_i_sym in enumerate(x_current.keys())]
 
-            functions = [x_current[x_i_sym] - gamma_i*self.gradients[index] for index, x_i_sym in enumerate(x_current.keys())]
+        functions_without_variables = substitute_values_in_variables(functions, x_current)
+        scalar_function = self.function.subs([(symbol, functions_without_variables[index])
+                                              for index, symbol in enumerate(self.free_symbols)])
 
-            functions_without_variables = substitute_values_in_variables(functions, x_current)
-            scalar_function = self.function.subs([(symbol, functions_without_variables[index])
-                                                  for index, symbol in enumerate(self.free_symbols)])
-
-            new_gamma_i = self._minimize_scalar_function(scalar_function)
-            x_next = [function.subs(gamma_i, new_gamma_i) for function in functions_without_variables]
-
-            is_should_stop = self.stopping_executor._first_stopping_criterion(x_current, x_next)
-            x_current = x_next
+        scalar_function = (1-2*gamma_i)**2+25*(1-50*gamma_i)**2
+        new_gamma_i = self._minimize_scalar_function(scalar_function)
+        x_next = [function.subs(gamma_i, new_gamma_i) for function in functions_without_variables]
 
         return x_next

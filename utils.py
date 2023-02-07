@@ -22,8 +22,9 @@ def substitute_values_in_variables(functions, x_i):
     for func in functions:
         for symbol in func.free_symbols:
             try:
-                result.append(func.subs(symbol, x_i[symbol]))
+                func = func.subs(symbol, x_i[symbol])
             except KeyError:
                 continue
+        result.append(func)
 
     return result

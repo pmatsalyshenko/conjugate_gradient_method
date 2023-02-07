@@ -1,3 +1,4 @@
+import time
 from copy import deepcopy
 
 from sympy import symbols
@@ -8,22 +9,29 @@ from utils import substitute_values_in_variables, calculate_norm, make_value_map
 
 class SecondMinimizer(BaseMinimizer):
     def minimize(self):
+        start_time = time.time()
+        iterations_results = []
+        i = 0
+
         is_should_stop = False
         is_first_iteration = True
 
         x_current = self.x_0
         x_previous = None
 
+        x_current_mapping = make_value_mapping(x_current, self.free_symbols)
         p_previous = [-value for value in
-                      substitute_values_in_variables(self.gradients,
-                                                     make_value_mapping(x_current, self.free_symbols))
+                      substitute_values_in_variables(self.gradients, x_current_mapping)
                       ]
+        r_previous = substitute_values_in_variables(self.gradients, x_current_mapping)
 
         while not is_should_stop:
             if is_first_iteration:
                 x_next = self.get_first_element(x_current)
                 is_first_iteration = False
 
+                iterations_results.append(x_next)
+                i += 1
                 x_previous, x_current = x_current, x_next
                 x_previous = make_value_mapping(x_previous, self.free_symbols)
             else:
@@ -32,9 +40,12 @@ class SecondMinimizer(BaseMinimizer):
 
                 r_current = substitute_values_in_variables(self.gradients, x_current)
 
-                r_current_norm = calculate_norm(x_current.values())
-                r_previous_norm = calculate_norm(x_previous.values())
-                beta_current = r_current_norm ** 2 / r_previous_norm ** 2
+                if i // self.dimension == 0:
+                    beta_current = 0
+                else:
+                    r_current_norm = calculate_norm(r_current)
+                    r_previous_norm = calculate_norm(r_previous)
+                    beta_current = r_current_norm / r_previous_norm
 
                 p_current = [-r_current[i] + beta_current * p_previous[i] for i in range(self.dimension)]
 
@@ -55,5 +66,9 @@ class SecondMinimizer(BaseMinimizer):
 
                 x_previous, x_current = x_current, x_next
                 p_previous = p_current
+                r_previous = r_current
+                i += 1
 
-        return x_next
+                iterations_results.append(x_next)
+        print("Time of execution of second method %s" % (time.time() - start_time))
+        return x_next, iterations_results

@@ -1,11 +1,16 @@
-from first_minimizer import FirstMinimizer
-from second_minimizer import SecondMinimizer
+from main_executor import MainExecutor
 
-first_executor = FirstMinimizer([1,1], 'x_1**2 + 25*x_2**2', 6)
-second_executor = SecondMinimizer([1,1], 'x_1**2 + 25*x_2**2', 6)
+input = [
+    [[-1.2, 1], '100*(x_2 - x_1**2) ** 2 + (1 - x_1)**2', 6, [1,1]],
+    [[-1.2, 1], '100*(x_2 - x_1**3)**2 + (1 - x_1)**2', 6, [1, 1]],
+    [[0,0], '(x_1**2 + x_2 -11)**2 + (x_1+x_2**2-7)**2', 3, [3, 2]],
+    [[-1,-1,-2], 'x_1**2+20*x_2**2+125*(x_3-1)**2', 6, [0,0,1]],
+    [[-1.2,2,0], '100*(x_3 - ((x_1 + x_2) / 2)**2)**2 + (1-x_1)**2 + (1-x_2)**2', 7, [1,1,1]],
+    [[3,-1,0,1], '(x_1+10*x_2)**2+5*(x_3-x_4)**2+(x_2-2*x_3)**4+10*(x_1-x_4)**4', 10, [0,0,0,0]],
+    [[1, -2, 3, 0.5], '(x_1 + 10*x_2)**2 + 5*(x_3-x_4)**2 + (x_2-3*x_3)**2+10*(x_1-x_4)**2', 6, [0,0,0,0]],
+    [[0,0,0], '(5*x_1+100*x_2**2-x_3-9)**2 + (x_2-x_3**3+1)**2+(x_1+2*x_2-2)**2', 7, [2,0,1]],
+    [[0,0,0,0], 'x_1**2+3*x_2**2+8*x_3**4+x_4**4-2*x_1-6*x_2-32*x_3-4*x_4', 7, [1,1,1,1]],
+    [[2, 0.2], '(1.5-x_1*(1-x_2))**2+(2.25-x_1*(1-x_2**2))**2+(2.625-x_1*(1-x_2**3))**2', 6, [3, 0.5]]
+]
 
-first_result = first_executor.minimize()
-second_result = second_executor.minimize()
-
-print([f'{value:.6f}' for value in first_result])
-print([f'{value:.6f}' for value in second_result])
+MainExecutor(input).execute()

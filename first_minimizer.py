@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import scipy.optimize as optimize
 from sympy import symbols
@@ -15,9 +17,12 @@ class FirstMinimizer(BaseMinimizer):
             beta, gamma = sorted(function_for_minimizing.free_symbols, key=lambda x: x.name)
             return function_for_minimizing.subs([(beta, beta_float), (gamma, gamma_float)])
 
-        return optimize.minimize(function_np, x_current, method='Nelder-Mead')
+        return optimize.minimize(function_np, np.zeros(2), method='Nelder-Mead')
 
     def minimize(self):
+        start_time = time.time()
+        iterations_results = []
+        i = 0
         is_should_stop = False
         is_first_iteration = True
 
@@ -29,6 +34,7 @@ class FirstMinimizer(BaseMinimizer):
                 x_next = self.get_first_element(x_current)
                 is_first_iteration = False
 
+                iterations_results.append(x_next)
                 x_previous, x_current = x_current, x_next
                 x_previous = make_value_mapping(x_previous, self.free_symbols)
             else:
@@ -55,8 +61,12 @@ class FirstMinimizer(BaseMinimizer):
 
                 x_previous = x_current
                 x_current = x_next
+                i += 1
 
-        return x_next
+                iterations_results.append(x_next)
+
+        print("Time of execution of first method %s" % (time.time() - start_time))
+        return x_next, iterations_results
 
 
 
